@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack Game</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .card-image {
+      width: 100px;
+      height: 150px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-5">Blackjack Game</h1>
+    <div class="mt-3">
+      <button class="btn btn-primary mr-2" onclick="startGame()">Start Game</button>
+      <button class="btn btn-success mr-2" onclick="hit()">Hit</button>
+      <button class="btn btn-danger" onclick="stand()">Stand</button>
+    </div>
+    <div class="row mt-3">
+      <div class="col">
+        <h3>Player Hand</h3>
+        <div id="playerHand"></div>
+        <div id="playerScore"></div>
+      </div>
+      <div class="col">
+        <h3>Dealer Hand</h3>
+        <div id="dealerHand"></div>
+        <div id="dealerScore"></div>
+      </div>
+    </div>
+    <div id="result" class="mt-3"></div>
+  </div>
+
+  <script>
+    let deck = [];
+    const suits = ['Hearts', 'Clubs', 'Diamonds', 'Spades'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+    function createDeck() {
+      deck = [];
+      for (let suitIdx = 0; suitIdx < suits.length; suitIdx++) {
+        for (let valueIdx = 0; valueIdx < values.length; valueIdx++) {
+          let card = {
+            suit: suits[suitIdx],
+            value: values[valueIdx]
+          };
+          deck.push(card);
+        }
+      }
+    }
+
+    function shuffleDeck() {
+      for (let i = 0; i < deck.length; i++) {
+        let swapIdx = Math.floor(Math.random() * deck.length);
+        let temp = deck[swapIdx];
+        deck[swapIdx] = deck[i];
+        deck[i] = temp;
+      }
+    }
+
+    function getCardString(card) {
+      return card.value + ' of ' + card.suit;
+    }
+
+    function getNextCard() {
+      return deck.shift();
+    }
+
+    function getCardNumericValue(card) {
+      switch (card.value) {
+        case 'A':
+          return 11;
+        case 'J':
+        case 'Q':
+        case 'K':
+          return 10;
+        default:
+          return parseInt(card.value);
+      }
+    }
+
+    let playerCards = [];
+    let dealerCards = [];
+    let playerScore = 0;
+    let dealerScore = 0;
+    let gameOver = false;
+
+    function startGame() {
+      createDeck();
+      shuffleDeck();
+      playerCards = [getNextCard(), getNextCard()];
+      dealerCards = [getNextCard(), getNextCard()];
+      playerScore = getScore(playerCards);
+      dealerScore = getScore(dealerCards);
+      gameOver = false;
+      showStatus();
+    }
+
+    function showStatus() {
+      if (!gameOver) {
+        document.getElementById('playerHand').innerHTML = '';
+        document.getElementById('playerScore').innerHTML = '';
+        playerCards.forEach(card => {
+          let cardImage = document.createElement('img');
+          cardImage.src = `https://deckofcardsapi.com/static/img/${card.value}${card.suit.charAt(0)}.png`;
+          cardImage.classList.add('card-image');
+          document.getElementById('playerHand').appendChild(cardImage);
+        });
+        document.getElementById('playerScore').innerHTML = `(score: ${playerScore})`;
+
+        document.getElementById('dealerHand').innerHTML = '';
+        document.getElementById('dealerScore').innerHTML = '';
+        dealerCards.forEach(card => {
+          let cardImage = document.createElement('img');
+          cardImage.src = `https://deckofcardsapi.com/static/img/${card.value}${card.suit.charAt(0)}.png`;
+          cardImage.classList.add('card-image');
+          document.getElementById('dealerHand').appendChild(cardImage);
+        });
+        document.getElementById('dealerScore').innerHTML = `(score: ${dealerScore})`;
+      } else {
+        let result = '';
+        if (playerScore > 21) {
+          result = 'Player busted, Dealer wins!';
+        } else if (dealerScore > 21) {
+          result = 'Dealer busted, Player wins!';
+        } else if (playerScore === dealerScore) {
+          result = 'It\'s a tie!';
+        } else if (playerScore > dealerScore) {
+          result = 'Player wins!';
+        } else {
+          result = 'Dealer wins!';
+        }
+        document.getElementById('result').innerHTML = result;
+      }
+    }
+
+    function hit() {
+      if (!gameOver) {
+        playerCards.push(getNextCard());
+        playerScore = getScore(playerCards);
+        showStatus();
+        if (playerScore >= 21) {
+          gameOver = true;
+          showStatus();
+        }
+      }
+    }
+
+    function stand() {
+      if (!gameOver) {
+        while (dealerScore < 17) {
+          dealerCards.push(getNextCard());
+          dealerScore = getScore(dealerCards);
+        }
+        gameOver = true;
+        showStatus();
+      }
+    }
+
+    function getScore(cards) {
+      let score = 0;
+      let hasAce = false;
+      for (let i = 0; i < cards.length; i++) {
+        let card = cards[i];
+        score += getCardNumericValue(card);
+        if (card.value === 'A') {
+          hasAce = true;
+        }
+      }
+      if (hasAce && score + 10 <= 21) {
+        score += 10;
+      }
+      return score;
+    }
+  </script>
+</body>
+</html>
